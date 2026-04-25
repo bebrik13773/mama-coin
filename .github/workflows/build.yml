@@ -130,6 +130,8 @@ jobs:
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_HOST: ftpupload.net
         run: |
+          # Заливаем только изменённые файлы (--ignore-time --size-only)
+          # Без --delete чтобы не тратить время на удаление на медленном FTP
           lftp -c "
             set ftp:ssl-allow true;
             set ftp:ssl-force false;
@@ -138,15 +140,11 @@ jobs:
             set net:max-retries 3;
             set net:reconnect-interval-base 5;
             set ssl:verify-certificate false;
+            set mirror:parallel-transfer-count 5;
+            set ftp:use-mdtm true;
             open -u '$FTP_USER','$FTP_PASS' ftp://$FTP_HOST;
-
-            echo '=== Cleaning htdocs/ ===';
-            glob -a rm -rf /htdocs/*;
-            glob -a rm -f /htdocs/.*;
-
-            echo '=== Uploading deploy/ ===';
             mirror --reverse --verbose --no-perms --no-symlinks \
+              --ignore-time --transfer-all \
               deploy/ /htdocs/;
-
             bye;
           "
