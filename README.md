@@ -6,6 +6,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 [![Android](https://img.shields.io/github/v/release/bebrik13773/mama-coin)](https://github.com/bebrik13773/mama-coin/releases/tag/latest)
 ![Code size](https://img.shields.io/github/languages/code-size/badges/shields.svg)
+![Lang](https://img.shields.io/github/languages/top/badges/shields.svg)
+![lancol](https://img.shields.io/github/languages/count/badges/shields.svg)
+![stars](https://img.shields.io/github/stars/badges/shields.svg?style=social)
 ---
 
 ## 📱 Что это
