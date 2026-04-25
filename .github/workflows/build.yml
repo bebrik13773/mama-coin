@@ -139,7 +139,14 @@ jobs:
             set net:reconnect-interval-base 5;
             set ssl:verify-certificate false;
             open -u '$FTP_USER','$FTP_PASS' ftp://$FTP_HOST;
-            mirror --reverse --delete --verbose --no-perms \
+
+            echo '=== Cleaning htdocs/ ===';
+            glob -a rm -rf /htdocs/*;
+            glob -a rm -f /htdocs/.*;
+
+            echo '=== Uploading deploy/ ===';
+            mirror --reverse --verbose --no-perms --no-symlinks \
               deploy/ /htdocs/;
+
             bye;
           "
