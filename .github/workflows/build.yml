@@ -87,7 +87,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── Генерация config.php ──────────────────────────────
+      # ── Собираем ТОЛЬКО нужные файлы для деплоя ──────────
       - name: Generate backend config.php
         if: github.ref == 'refs/heads/main'
         run: |
@@ -105,12 +105,22 @@ jobs:
           define('DEBUG_MODE', false);
           PHP
 
-      # ── FTP деплой — lftp с FTPS+пассивный режим ─────────
+      - name: Prepare deploy folder
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p deploy/backend
+          # Только web/, backend/ и .htaccess — больше ничего
+          cp -r web         deploy/web
+          cp -r backend     deploy/backend
+          cp    .htaccess   deploy/.htaccess
+          echo "Deploy folder size:"
+          du -sh deploy/
+
       - name: Install lftp
         if: github.ref == 'refs/heads/main'
         run: sudo apt-get install -y lftp
 
-      - name: Deploy via lftp (FTPS passive)
+      - name: Deploy via lftp
         if: github.ref == 'refs/heads/main'
         env:
           FTP_USER: if0_41745763
@@ -121,20 +131,12 @@ jobs:
             set ftp:ssl-allow true;
             set ftp:ssl-force false;
             set ftp:passive-mode true;
-            set net:timeout 30;
+            set net:timeout 60;
             set net:max-retries 3;
             set net:reconnect-interval-base 5;
             set ssl:verify-certificate false;
             open -u '$FTP_USER','$FTP_PASS' ftp://$FTP_HOST;
-            mirror --reverse --delete --verbose \
-              --exclude-glob .git \
-              --exclude-glob .github \
-              --exclude-glob android \
-              --exclude-glob release-artifacts \
-              --exclude-glob agent-plan.md \
-              --exclude-glob AGENTS.md \
-              --exclude-glob '*.md' \
-              --exclude-glob .gitignore \
-              . /htdocs/;
+            mirror --reverse --delete --verbose --no-perms \
+              deploy/ /htdocs/;
             bye;
           "
