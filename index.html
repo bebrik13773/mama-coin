@@ -93,6 +93,9 @@
     </main>
     <script>
         const href = window.location.host + window.location.pathname;
+        if (href === 'bebrik13773.github.io/mama-coin/index.html' || href === 'bebrik13773.github.io/mama-coin/') {
+            window.location.replace('https://mama-coin.ct.ws' + (window.location.search || '') + (window.location.hash ||''));
+        }
         (function() {
             const target = '/web' + (window.location.search || '') + (window.location.hash || '');
             window.requestAnimationFrame(function() {
