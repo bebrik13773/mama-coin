@@ -11,6 +11,15 @@ require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/Response.php';
 require_once __DIR__ . '/Notify.php';
+require_once __DIR__ . '/migrate.php';
+
+// Авто-миграция: создаём таблицы если их нет (безопасно, использует IF NOT EXISTS)
+try {
+    runMigrations(Database::get());
+} catch (Exception $e) {
+    // Не падаем — просто логируем
+    error_log('Migration error: ' . $e->getMessage());
+}
 
 $path     = trim($_SERVER['PATH_INFO'] ?? '/', '/');
 $method   = $_SERVER['REQUEST_METHOD'];
@@ -20,15 +29,17 @@ $id       = $segments[1] ?? null;
 
 try {
     switch ($resource) {
-        case 'register':      case 'login': case 'child-join': require __DIR__ . '/routes/auth.php';         break;
-        case 'family':        require __DIR__ . '/routes/family.php';       break;
-        case 'children':      require __DIR__ . '/routes/children.php';     break;
-        case 'tasks':         require __DIR__ . '/routes/tasks.php';        break;
-        case 'claims':        require __DIR__ . '/routes/claims.php';       break;
-        case 'wallet':        require __DIR__ . '/routes/wallet.php';       break;
-        case 'exchange':      require __DIR__ . '/routes/exchange.php';     break;
-        case 'leaderboard':   require __DIR__ . '/routes/leaderboard.php';  break;
-        default:              Response::error('Not found', 404);
+        case 'register': case 'login': case 'child-join':
+            require __DIR__ . '/routes/auth.php'; break;
+        case 'family':       require __DIR__ . '/routes/family.php';      break;
+        case 'children':     require __DIR__ . '/routes/children.php';    break;
+        case 'tasks':        require __DIR__ . '/routes/tasks.php';       break;
+        case 'claims':       require __DIR__ . '/routes/claims.php';      break;
+        case 'wallet':       require __DIR__ . '/routes/wallet.php';      break;
+        case 'exchange':     require __DIR__ . '/routes/exchange.php';    break;
+        case 'leaderboard':  require __DIR__ . '/routes/leaderboard.php'; break;
+        case 'ping':         Response::success(['status' => 'ok', 'time' => date('c')]); break;
+        default:             Response::error('Not found', 404);
     }
 } catch (Exception $e) {
     Response::error(defined('DEBUG_MODE') && DEBUG_MODE ? $e->getMessage() : 'Server error', 500);

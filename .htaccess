@@ -1,0 +1,31 @@
+Options -Indexes
+
+# Routing для API
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # API запросы → backend/api/index.php
+    RewriteRule ^api/(.*)$ backend/api/index.php/$1 [QSA,L]
+
+    # Всё остальное → web/index.html (SPA)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ web/index.html [QSA,L]
+</IfModule>
+
+# Кэширование статики
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType image/png "access plus 1 month"
+</IfModule>
+
+# Безопасность
+<FilesMatch "\.(php)$">
+    <If "%{REQUEST_URI} =~ m#^/backend/config/#">
+        Order Allow,Deny
+        Deny from all
+    </If>
+</FilesMatch>

@@ -1,6 +1,6 @@
 // js/api.js — API client + token storage
 
-const API_BASE = window.MAMACOIN_API || 'https://your-domain.infinityfreeapp.com/api/';
+const API_BASE = window.MAMACOIN_API || 'https://mama-coin.ct.ws/api/';
 
 // ── Token storage ────────────────────────────────────────
 const Store = {
