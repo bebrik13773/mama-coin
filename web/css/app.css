@@ -546,7 +546,7 @@ h3 { font-size: 1rem;   font-weight: 700; }
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.7);
-  z-index: 200;
+  z-index: 300;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
@@ -560,7 +560,7 @@ h3 { font-size: 1rem;   font-weight: 700; }
   border-radius: 20px 20px 0 0;
   border-top: 1.5px solid var(--border);
   padding: 16px 20px calc(var(--safe-bottom) + 24px);
-  z-index: 201;
+  z-index: 301;
   max-height: 90vh;
   overflow-y: auto;
   transform: translateY(100%);

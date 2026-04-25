@@ -25,10 +25,15 @@ async function loadParentData() {
 function drawParent() {
   const el = document.getElementById('screen-parent');
   el.innerHTML = `
-    <div id="p-overlay" class="overlay" onclick="closeAllSheets()"></div>
-    <div id="p-create-task-sheet" class="bottom-sheet">
-      ${createTaskSheetHTML()}
+    <div id="p-tab-home"     class="p-tab ${parentTab==='home'    ?'':'hidden'}">${renderParentHome()}</div>
+    <div id="p-tab-tasks"    class="p-tab ${parentTab==='tasks'   ?'':'hidden'}">${renderParentTasks()}</div>
+    <div id="p-tab-review"   class="p-tab ${parentTab==='review'  ?'':'hidden'}">${renderParentReview()}</div>
+    <div id="p-tab-settings" class="p-tab ${parentTab==='settings'?'':'hidden'}">${renderParentSettings()}
     </div>
+    ${parentBottomNav()}
+
+    <!-- Оверлей и шторки — ВНЕ табов, в самом конце -->
+    <div id="p-overlay" class="overlay" onclick="closeAllSheets()"></div>
     <div id="p-reject-sheet" class="bottom-sheet">
       <div class="sheet-handle"></div>
       <div class="sheet-title">Причина отклонения</div>
@@ -38,21 +43,9 @@ function drawParent() {
       </div>
       <button class="btn btn-outline-red mt-8" onclick="submitReject()">Отклонить</button>
     </div>
-
-    <div id="p-tab-home"     class="p-tab ${parentTab==='home'?'':'hidden'}">
-      ${renderParentHome()}
+    <div id="p-create-task-sheet" class="bottom-sheet">
+      <div id="p-create-task-inner"></div>
     </div>
-    <div id="p-tab-tasks"    class="p-tab ${parentTab==='tasks'?'':'hidden'}">
-      ${renderParentTasks()}
-    </div>
-    <div id="p-tab-review"   class="p-tab ${parentTab==='review'?'':'hidden'}">
-      ${renderParentReview()}
-    </div>
-    <div id="p-tab-settings" class="p-tab ${parentTab==='settings'?'':'hidden'}">
-      ${renderParentSettings()}
-    </div>
-
-    ${parentBottomNav()}
   `;
 }
 
@@ -69,7 +62,9 @@ function parentBottomNav() {
     ['home','🏠','Главная'], ['tasks','📋','Задания'],
     ['review','🔍','Проверка'], ['settings','⚙️','Настройки']
   ];
-  const badge = parentData.pending.length > 0 ? `<span style="position:absolute;top:0;right:8px;background:var(--red);color:#fff;border-radius:99px;font-size:0.55rem;font-weight:900;padding:1px 5px;">${parentData.pending.length}</span>` : '';
+  const badge = parentData.pending.length > 0
+    ? `<span style="position:absolute;top:-2px;right:6px;background:var(--red);color:#fff;border-radius:99px;font-size:0.55rem;font-weight:900;padding:1px 5px;">${parentData.pending.length}</span>`
+    : '';
   return `<nav class="bottom-nav">
     ${tabs.map(([t,ic,lb]) => `
       <div class="nav-item ${parentTab===t?'active':''}" id="p-nav-${t}" onclick="switchParentTab('${t}')">
@@ -87,7 +82,8 @@ function renderParentHome() {
       <div class="topbar">
         <span class="topbar-title">МамаКоин</span>
         <div style="display:flex;gap:8px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:var(--card);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="switchParentTab('review')">🔔</div>
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--card);border:1.5px solid var(--border);
+            display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="switchParentTab('review')">🔔</div>
         </div>
       </div>
 
@@ -127,13 +123,13 @@ function claimCardHTML(cl) {
       <div class="claim-top">
         <div>
           <div class="claim-name">${cl.emoji} ${esc(cl.title)}</div>
-          <div class="claim-who">${cl.child_avatar} ${esc(cl.child_name)} · только что</div>
+          <div class="claim-who">${cl.child_avatar} ${esc(cl.child_name)}</div>
         </div>
         <div style="color:var(--gold);font-weight:800;">+${cl.coins_reward} 🪙</div>
       </div>
       <div class="claim-actions">
         <button class="btn btn-ghost-green" onclick="approveClaim(${cl.id})">✓ Принять</button>
-        <button class="btn btn-ghost-red" onclick="openRejectSheet(${cl.id})">✕ Отклонить</button>
+        <button class="btn btn-ghost-red"   onclick="openRejectSheet(${cl.id})">✕ Отклонить</button>
       </div>
     </div>`;
 }
@@ -161,8 +157,9 @@ function taskRowParentHTML(t) {
       <div class="task-info">
         <div class="task-name">${esc(t.title)}</div>
         <div class="task-badges">
-          ${t.is_daily ? '<span class="badge badge-blue">Ежедневное</span>' : ''}
-          ${t.type === 'common' ? '<span class="badge badge-green">Общее</span>' : `<span class="badge badge-gold">${esc(t.target_child_name||'Личное')}</span>`}
+          ${t.is_daily       ? '<span class="badge badge-blue">Ежедневное</span>' : ''}
+          ${t.type==='common'? '<span class="badge badge-green">Общее</span>'
+                             : `<span class="badge badge-gold">${esc(t.target_child_name||'Личное')}</span>`}
           ${t.one_time_claim ? '<span class="badge badge-gold">1 раз</span>' : ''}
         </div>
       </div>
@@ -176,15 +173,15 @@ function taskRowParentHTML(t) {
 // ── REVIEW ────────────────────────────────────────────────
 function renderParentReview() {
   const { pending, exchanges } = parentData;
-  const all = [...pending.map(p => ({...p, _type:'claim'})), ...exchanges.map(e => ({...e, _type:'exchange'}))];
+  const total = pending.length + exchanges.length;
   return `
     <div class="page" style="padding-bottom:80px;">
       <div class="topbar">
         <span class="topbar-title">На проверке</span>
-        ${all.length > 0 ? `<span style="background:var(--red);color:#fff;border-radius:99px;padding:2px 8px;font-size:0.7rem;font-weight:900;">${all.length}</span>` : ''}
+        ${total > 0 ? `<span style="background:var(--red);color:#fff;border-radius:99px;padding:2px 8px;font-size:0.7rem;font-weight:900;">${total}</span>` : ''}
       </div>
-      ${all.length === 0
-        ? `<div class="empty-state"><div class="icon">✅</div><h3>Всё проверено!</h3><p>Нет ожидающих заданий или обменов</p></div>`
+      ${total === 0
+        ? `<div class="empty-state"><div class="icon">✅</div><h3>Всё проверено!</h3><p>Нет ожидающих заданий</p></div>`
         : ''}
       ${pending.map(claimCardHTML).join('')}
       ${exchanges.map(exchangeCardHTML).join('')}
@@ -196,7 +193,7 @@ function exchangeCardHTML(ex) {
     <div class="claim-card">
       <div class="claim-top">
         <div>
-          <div class="claim-name">💱 Запрос обмена монет</div>
+          <div class="claim-name">💱 Запрос обмена</div>
           <div class="claim-who">${esc(ex.child_name||'')} · ${ex.coins_amount} 🪙 → ${ex.rub_amount} ₽</div>
         </div>
         <span class="badge badge-gold">${ex.rub_amount} ₽</span>
@@ -211,6 +208,7 @@ function exchangeCardHTML(ex) {
 // ── SETTINGS ──────────────────────────────────────────────
 function renderParentSettings() {
   const { family } = parentData;
+  const code = family?.invite_code || null;
   return `
     <div class="page" style="padding-bottom:80px;padding-left:16px;padding-right:16px;">
       <div class="topbar" style="padding-left:0;padding-right:0;">
@@ -219,13 +217,15 @@ function renderParentSettings() {
 
       <div class="card">
         <div class="card-title">👨‍👩‍👧 Наша семья</div>
-        <div class="input-label" style="margin-bottom:8px;">Код семьи (покажи ребёнку)</div>
+        <div class="input-label" style="margin-bottom:8px;">Код для входа детей</div>
         <div class="invite-code-box">
           <div>
-            <div style="font-size:0.65rem;color:var(--gold);font-weight:700;letter-spacing:1px;margin-bottom:2px;">КОД СЕМЬИ</div>
-            <div class="invite-code">${family?.invite_code || '------'}</div>
+            <div style="font-size:0.65rem;color:var(--gold);font-weight:700;letter-spacing:1px;margin-bottom:4px;">КОД СЕМЬИ</div>
+            ${code
+              ? `<div class="invite-code" id="family-code-display">${code}</div>`
+              : `<div style="color:var(--muted);font-size:0.85rem;font-weight:600;">Загрузка...</div>`}
           </div>
-          <span style="font-size:1.3rem;cursor:pointer;" onclick="copyCode()">📋</span>
+          ${code ? `<span style="font-size:1.3rem;cursor:pointer;" onclick="copyCode()">📋</span>` : ''}
         </div>
       </div>
 
@@ -239,6 +239,7 @@ function renderParentSettings() {
           <div class="input-label">Лимит монет к обмену в месяц (на ребёнка)</div>
           <input class="input" id="set-limit" type="number" value="${family?.monthly_limit||500}" min="1">
         </div>
+        <div id="settings-error" style="color:var(--red);font-size:0.8rem;min-height:16px;margin-bottom:8px;"></div>
         <button class="btn btn-gold" onclick="saveSettings()">Сохранить</button>
       </div>
 
@@ -248,6 +249,19 @@ function renderParentSettings() {
 }
 
 // ── CREATE TASK SHEET ─────────────────────────────────────
+let selectedTaskType = 'common';
+let selectedChildId  = null;
+
+function openCreateTask() {
+  selectedTaskType = 'common';
+  selectedChildId  = null;
+  // Заполняем содержимое шторки
+  document.getElementById('p-create-task-inner').innerHTML = createTaskSheetHTML();
+  // Открываем оверлей и шторку
+  document.getElementById('p-overlay').classList.add('open');
+  document.getElementById('p-create-task-sheet').classList.add('open');
+}
+
 function createTaskSheetHTML() {
   const children = parentData.children;
   return `
@@ -269,16 +283,23 @@ function createTaskSheetHTML() {
       </div>
     </div>
 
-    <div class="input-label mb-8">Тип задания</div>
-    <div class="type-toggle mb-12" id="type-toggle">
-      <div class="type-btn active-common" onclick="setTaskType('common')">🌐 Общее<br><small>Для всех детей</small></div>
-      <div class="type-btn" onclick="setTaskType('individual')">👤 Личное<br><small>Для одного ребёнка</small></div>
+    <div class="input-label" style="margin-bottom:6px;">Тип задания</div>
+    <div class="type-toggle" style="margin-bottom:12px;">
+      <div class="type-btn active-common" id="type-btn-common" onclick="setTaskType('common')">
+        🌐 Общее<br><small style="font-weight:600;opacity:0.8;">Для всех детей</small>
+      </div>
+      <div class="type-btn" id="type-btn-individual" onclick="setTaskType('individual')">
+        👤 Личное<br><small style="font-weight:600;opacity:0.8;">Для одного ребёнка</small>
+      </div>
     </div>
 
-    <div id="child-selector" class="hidden mb-12">
-      <div class="input-label mb-8">Для кого</div>
-      <div class="child-chips" id="child-chips">
-        ${children.map(c => `<div class="child-chip" data-id="${c.id}" onclick="selectChild(${c.id},this)">${c.avatar} ${esc(c.name)}</div>`).join('')}
+    <div id="child-selector" style="display:none;margin-bottom:12px;">
+      <div class="input-label" style="margin-bottom:6px;">Для кого</div>
+      <div class="child-chips">
+        ${children.map(c => `
+          <div class="child-chip" data-id="${c.id}" onclick="selectChild(${c.id},this)">
+            ${c.avatar} ${esc(c.name)}
+          </div>`).join('')}
       </div>
     </div>
 
@@ -289,29 +310,26 @@ function createTaskSheetHTML() {
       </div>
       <label class="toggle"><input type="checkbox" id="t-daily"><span class="toggle-slider"></span></label>
     </div>
-    <div class="toggle-row">
+    <div class="toggle-row" style="margin-bottom:12px;">
       <div class="toggle-info">
         <h4>🔒 Только 1 выполнение</h4>
-        <p>После взятия — остальным недоступно</p>
+        <p>После взятия другим — недоступно</p>
       </div>
       <label class="toggle"><input type="checkbox" id="t-onetime"><span class="toggle-slider"></span></label>
     </div>
 
-    <div id="task-form-error" class="text-red text-sm" style="min-height:16px;margin:8px 0;"></div>
-    <button class="btn btn-gold mt-8" onclick="submitCreateTask()">Создать задание ✓</button>
+    <div id="task-form-error" style="color:var(--red);font-size:0.8rem;min-height:16px;margin-bottom:8px;"></div>
+    <button class="btn btn-gold" onclick="submitCreateTask()">Создать задание ✓</button>
+    <button class="btn btn-outline" style="margin-top:8px;" onclick="closeAllSheets()">Отмена</button>
   `;
 }
-
-let selectedTaskType = 'common';
-let selectedChildId  = null;
 
 function setTaskType(type) {
   selectedTaskType = type;
   selectedChildId  = null;
-  const btns = document.querySelectorAll('#type-toggle .type-btn');
-  btns.forEach(b => b.className = 'type-btn');
-  btns[type === 'common' ? 0 : 1].classList.add(`active-${type}`);
-  document.getElementById('child-selector').classList.toggle('hidden', type !== 'individual');
+  document.getElementById('type-btn-common').className     = 'type-btn' + (type==='common'?     ' active-common':'');
+  document.getElementById('type-btn-individual').className = 'type-btn' + (type==='individual'? ' active-individual':'');
+  document.getElementById('child-selector').style.display  = type==='individual' ? 'block' : 'none';
   document.querySelectorAll('.child-chip').forEach(c => c.classList.remove('selected'));
 }
 
@@ -321,22 +339,10 @@ function selectChild(id, el) {
   el.classList.add('selected');
 }
 
-function openCreateTask() {
-  selectedTaskType = 'common';
-  selectedChildId  = null;
-  document.getElementById('p-create-task-sheet').innerHTML = createTaskSheetHTML();
-  openSheet('p-create-task-sheet');
-  // bind overlay to p-overlay
-  document.getElementById('p-overlay').classList.add('open');
-  document.getElementById('p-create-task-sheet').classList.add('open');
-}
-
 function closeAllSheets() {
-  ['p-create-task-sheet','p-reject-sheet'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('open');
-  });
   document.getElementById('p-overlay').classList.remove('open');
+  document.getElementById('p-create-task-sheet').classList.remove('open');
+  document.getElementById('p-reject-sheet').classList.remove('open');
 }
 
 async function submitCreateTask() {
@@ -373,7 +379,7 @@ async function deleteTask(id) {
   await renderParent('tasks');
 }
 
-// ── Claims actions ────────────────────────────────────────
+// ── Claims ────────────────────────────────────────────────
 async function approveClaim(id) {
   const r = await api.approveClaim(id);
   if (r.ok) { toast('✅ Задание принято! Монеты начислены'); await renderParent(parentTab); }
@@ -383,10 +389,12 @@ async function approveClaim(id) {
 let rejectClaimId = null;
 function openRejectSheet(id) {
   rejectClaimId = id;
-  document.getElementById('reject-reason').value = '';
+  const el = document.getElementById('reject-reason');
+  if (el) el.value = '';
   document.getElementById('p-overlay').classList.add('open');
   document.getElementById('p-reject-sheet').classList.add('open');
 }
+
 async function submitReject() {
   const reason = document.getElementById('reject-reason').value.trim();
   const r = await api.rejectClaim(rejectClaimId, reason || null);
@@ -399,6 +407,7 @@ async function approveExchange(id) {
   if (r.ok) { toast('💰 Обмен подтверждён!'); await renderParent(parentTab); }
   else toast(r.error, 'error');
 }
+
 async function rejectExchange(id) {
   const r = await api.rejectExchange(id);
   if (r.ok) { toast('Обмен отклонён'); await renderParent(parentTab); }
@@ -409,15 +418,33 @@ async function rejectExchange(id) {
 async function saveSettings() {
   const rate  = parseFloat(document.getElementById('set-rate').value);
   const limit = parseInt(document.getElementById('set-limit').value);
+  const errEl = document.getElementById('settings-error');
+  if (!rate || rate < 1)   { errEl.textContent = 'Введи корректный курс'; return; }
+  if (!limit || limit < 1) { errEl.textContent = 'Введи корректный лимит'; return; }
   const r = await api.updateFamily({ coin_rate: rate, monthly_limit: limit });
-  if (r.ok) { toast('Настройки сохранены ✓'); await loadParentData(); }
-  else toast(r.error, 'error');
+  if (r.ok) {
+    toast('Настройки сохранены ✓');
+    await loadParentData();
+    // Обновляем поля без полного перерендера
+    if (parentData.family) {
+      document.getElementById('set-rate').value  = parentData.family.coin_rate;
+      document.getElementById('set-limit').value = parentData.family.monthly_limit;
+    }
+    errEl.textContent = '';
+  } else {
+    errEl.textContent = r.error || 'Ошибка сохранения';
+    toast(r.error || 'Ошибка', 'error');
+  }
 }
 
 function copyCode() {
   const code = parentData.family?.invite_code || '';
-  if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => toast('Код скопирован!'));
-  else toast(code);
+  if (!code) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => toast('Код скопирован! ' + code));
+  } else {
+    toast(code);
+  }
 }
 
 function doLogout() {
@@ -427,7 +454,6 @@ function doLogout() {
   renderSplash();
 }
 
-// ── Util ──────────────────────────────────────────────────
 function esc(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
