@@ -10,12 +10,11 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # нужно для создания релизов
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
 
-      # ── Java & Gradle ────────────────────────────────────
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -27,7 +26,6 @@ jobs:
         with:
           gradle-version: '8.4'
 
-      # ── Подготовка Android ───────────────────────────────
       - name: Copy web assets into Android
         run: |
           mkdir -p android/app/src/main/assets
@@ -55,7 +53,6 @@ jobs:
           }
           JSON
 
-      # ── Сборка APK ───────────────────────────────────────
       - name: Build Debug APK
         run: gradle assembleDebug
         working-directory: android
@@ -66,8 +63,8 @@ jobs:
           cp android/app/build/outputs/apk/debug/app-debug.apk \
              release-artifacts/mamacoin-v${{ github.run_number }}.apk
 
-      # ── Создание GitHub Release с тегом latest ───────────
-      - name: Delete existing 'latest' tag and release
+      # ── GitHub Release ────────────────────────────────────
+      - name: Delete existing 'latest' release and tag
         if: github.ref == 'refs/heads/main'
         run: |
           gh release delete latest --yes 2>/dev/null || true
@@ -80,24 +77,18 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "МамаКоин — последняя сборка #${{ github.run_number }}"
+          name: "МамаКоин — сборка #${{ github.run_number }}"
           body: |
-            🪙 **МамаКоин** — автоматическая сборка
-
-            **Сборка:** #${{ github.run_number }}
-            **Коммит:** ${{ github.sha }}
-            **Ветка:** ${{ github.ref_name }}
-
-            📱 Скачай APK ниже и установи на Android (нужно разрешить установку из неизвестных источников)
+            🪙 **МамаКоин** — автоматическая сборка #${{ github.run_number }}
+            📱 Скачай APK ниже, установи на Android
             🌐 Веб-версия: https://mama-coin.ct.ws
           files: release-artifacts/mamacoin-v${{ github.run_number }}.apk
           make_latest: true
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── FTP деплой backend + web на InfinityFree ─────────
-      - name: Generate backend config.php from secrets
+      # ── Генерация config.php ──────────────────────────────
+      - name: Generate backend config.php
         if: github.ref == 'refs/heads/main'
         run: |
           cat > backend/config/config.php << PHP
@@ -114,21 +105,36 @@ jobs:
           define('DEBUG_MODE', false);
           PHP
 
-      - name: Deploy to InfinityFree via FTP
+      # ── FTP деплой — lftp с FTPS+пассивный режим ─────────
+      - name: Install lftp
         if: github.ref == 'refs/heads/main'
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ftpupload.net
-          username: if0_41745763
-          password: ${{ secrets.FTP_PASS }}
-          port: 21
-          local-dir: ./
-          server-dir: /htdocs/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            android/**
-            release-artifacts/**
-            agent-plan.md
-            AGENTS.md
+        run: sudo apt-get install -y lftp
+
+      - name: Deploy via lftp (FTPS passive)
+        if: github.ref == 'refs/heads/main'
+        env:
+          FTP_USER: if0_41745763
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_HOST: ftpupload.net
+        run: |
+          lftp -c "
+            set ftp:ssl-allow true;
+            set ftp:ssl-force false;
+            set ftp:passive-mode true;
+            set net:timeout 30;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
+            set ssl:verify-certificate false;
+            open -u '$FTP_USER','$FTP_PASS' ftp://$FTP_HOST;
+            mirror --reverse --delete --verbose \
+              --exclude-glob .git \
+              --exclude-glob .github \
+              --exclude-glob android \
+              --exclude-glob release-artifacts \
+              --exclude-glob agent-plan.md \
+              --exclude-glob AGENTS.md \
+              --exclude-glob '*.md' \
+              --exclude-glob .gitignore \
+              . /htdocs/;
+            bye;
+          "
