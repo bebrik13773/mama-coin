@@ -108,13 +108,16 @@ jobs:
       - name: Prepare deploy folder
         if: github.ref == 'refs/heads/main'
         run: |
-          mkdir -p deploy/backend
-          # Только web/, backend/ и .htaccess — больше ничего
-          cp -r web         deploy/web
-          cp -r backend     deploy/backend
-          cp    .htaccess   deploy/.htaccess
+          mkdir -p deploy
+          # cp -r web deploy/web     → deploy/web/  ✓
+          # cp -r backend/. deploy/backend/ → deploy/backend/ ✓
+          cp -r web           deploy/web
+          cp -r backend/.     deploy/backend
+          cp    .htaccess     deploy/.htaccess
           echo "Deploy folder size:"
           du -sh deploy/
+          echo "Structure:"
+          find deploy -maxdepth 3 -type f | head -20
 
       - name: Install lftp
         if: github.ref == 'refs/heads/main'
