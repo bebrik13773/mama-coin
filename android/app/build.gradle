@@ -17,7 +17,7 @@ android {
     }
 
     buildTypes {
-        debug   { applicationIdSuffix ".debug" }
+        debug   { /* нет суффикса — applicationId остаётся com.mamacoin */ }
         release { minifyEnabled false }
     }
 

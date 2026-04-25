@@ -29,15 +29,30 @@ jobs:
           mkdir -p android/app/src/main/assets
           cp -r web android/app/src/main/assets/web
 
-      - name: Create dummy google-services.json
+      - name: Create google-services.json stub
         run: |
           cat > android/app/google-services.json << 'JSON'
           {
-            "project_info": { "project_number": "000000000000", "project_id": "mamacoin-dummy", "storage_bucket": "mamacoin-dummy.appspot.com" },
-            "client": [{
-              "client_info": { "mobilesdk_app_id": "1:000000000000:android:0000000000000000", "android_client_info": { "package_name": "com.mamacoin" } },
-              "oauth_client": [], "api_key": [{ "current_key": "dummy" }], "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
-            }],
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "mamacoin-stub",
+              "storage_bucket": "mamacoin-stub.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "com.mamacoin"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "stub" }],
+                "services": {
+                  "appinvite_service": { "other_platform_oauth_client": [] }
+                }
+              }
+            ],
             "configuration_version": "1"
           }
           JSON
