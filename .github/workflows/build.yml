@@ -33,25 +33,11 @@ jobs:
 
       - name: Create google-services.json stub
         run: |
-          cat > android/app/google-services.json << 'JSON'
-          {
-            "project_info": {
-              "project_number": "000000000000",
-              "project_id": "mamacoin-stub",
-              "storage_bucket": "mamacoin-stub.appspot.com"
-            },
-            "client": [{
-              "client_info": {
-                "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
-                "android_client_info": { "package_name": "com.mamacoin" }
-              },
-              "oauth_client": [],
-              "api_key": [{ "current_key": "stub" }],
-              "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
-            }],
+          echo '{
+            "project_info": {"project_number":"000000000000","project_id":"mamacoin-stub","storage_bucket":"mamacoin-stub.appspot.com"},
+            "client": [{"client_info": {"mobilesdk_app_id": "1:000000000000:android:0000000000000000000000","android_client_info": {"package_name": "com.mamacoin"}},"oauth_client": [],"api_key": [{"current_key": "stub"}],"services": {"appinvite_service": {"other_platform_oauth_client": []}}}],
             "configuration_version": "1"
-          }
-          JSON
+          }' > android/app/google-services.json
 
       - name: Build Debug APK
         run: gradle assembleDebug
@@ -63,8 +49,7 @@ jobs:
           cp android/app/build/outputs/apk/debug/app-debug.apk \
              release-artifacts/mamacoin-v${{ github.run_number }}.apk
 
-      # ── GitHub Release ────────────────────────────────────
-      - name: Delete existing 'latest' release and tag
+      - name: Delete existing latest release
         if: github.ref == 'refs/heads/main'
         run: |
           gh release delete latest --yes 2>/dev/null || true
@@ -72,71 +57,68 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release (latest)
+      - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: "МамаКоин — сборка #${{ github.run_number }}"
           body: |
-            🪙 **МамаКоин** — автоматическая сборка #${{ github.run_number }}
-            📱 Скачай APK ниже, установи на Android
-            🌐 Веб-версия: https://mama-coin.ct.ws
+            🪙 **МамаКоин** — сборка #${{ github.run_number }}
+            📱 Скачай APK ниже
+            🌐 Веб: https://mama-coin.ct.ws
           files: release-artifacts/mamacoin-v${{ github.run_number }}.apk
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── Собираем ТОЛЬКО нужные файлы для деплоя ──────────
       - name: Generate backend config.php
         if: github.ref == 'refs/heads/main'
         env:
-          DB_PASS: ${{ secrets.DB_PASS }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          FCM_KEY: ${{ secrets.FCM_SERVER_KEY }}
+          MC_DB_PASS:    ${{ secrets.DB_PASS }}
+          MC_JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          MC_FCM_KEY:    ${{ secrets.FCM_SERVER_KEY }}
         run: |
-          cat > backend/config/config.php << PHPEOF
-<?php
-define('DB_HOST',          'sql203.infinityfree.com');
-define('DB_NAME',          'if0_41745763_app');
-define('DB_USER',          'if0_41745763');
-define('DB_PASS',          '${DB_PASS}');
-define('DB_CHARSET',       'utf8mb4');
-define('JWT_SECRET',       '${JWT_SECRET}');
-define('JWT_EXPIRE_HOURS', 720);
-define('FCM_SERVER_KEY',   '${FCM_KEY}');
-define('APP_URL',          'https://mama-coin.ct.ws');
-define('DEBUG_MODE',       false);
-PHPEOF
-          echo "config.php generated, size: $(wc -c < backend/config/config.php) bytes"
+          python3 - << 'PYEOF'
+          import os
+          php = "\n".join([
+              "<?php",
+              "define('DB_HOST',          'sql203.infinityfree.com');",
+              "define('DB_NAME',          'if0_41745763_app');",
+              "define('DB_USER',          'if0_41745763');",
+              "define('DB_PASS',          '" + os.environ.get('MC_DB_PASS','') + "');",
+              "define('DB_CHARSET',       'utf8mb4');",
+              "define('JWT_SECRET',       '" + os.environ.get('MC_JWT_SECRET','') + "');",
+              "define('JWT_EXPIRE_HOURS', 720);",
+              "define('FCM_SERVER_KEY',   '" + os.environ.get('MC_FCM_KEY','') + "');",
+              "define('APP_URL',          'https://mama-coin.ct.ws');",
+              "define('DEBUG_MODE',       false);",
+          ]) + "\n"
+          open('backend/config/config.php', 'w').write(php)
+          print('config.php generated:', len(php), 'bytes')
+          PYEOF
 
       - name: Prepare deploy folder
         if: github.ref == 'refs/heads/main'
         run: |
           mkdir -p deploy
-          # cp -r web deploy/web     → deploy/web/  ✓
-          # cp -r backend/. deploy/backend/ → deploy/backend/ ✓
-          cp -r web           deploy/web
-          cp -r backend/.     deploy/backend
-          cp    .htaccess     deploy/.htaccess
-          echo "Deploy folder size:"
-          du -sh deploy/
-          echo "Structure:"
-          find deploy -maxdepth 3 -type f | head -20
+          cp -r web        deploy/web
+          cp -r backend/.  deploy/backend
+          cp    .htaccess  deploy/.htaccess
+          echo "Deploy size: $(du -sh deploy/ | cut -f1)"
+          find deploy -maxdepth 3 -type f | sort
 
       - name: Install lftp
         if: github.ref == 'refs/heads/main'
         run: sudo apt-get install -y lftp
 
-      - name: Deploy via lftp
+      - name: Deploy via FTP
         if: github.ref == 'refs/heads/main'
         env:
           FTP_USER: if0_41745763
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_HOST: ftpupload.net
         run: |
-          # Заливаем только изменённые файлы (--ignore-time --size-only)
-          # Без --delete чтобы не тратить время на удаление на медленном FTP
           lftp -c "
             set ftp:ssl-allow true;
             set ftp:ssl-force false;
@@ -146,10 +128,7 @@ PHPEOF
             set net:reconnect-interval-base 5;
             set ssl:verify-certificate false;
             set mirror:parallel-transfer-count 5;
-            set ftp:use-mdtm true;
             open -u '$FTP_USER','$FTP_PASS' ftp://$FTP_HOST;
-            mirror --reverse --verbose --no-perms --no-symlinks \
-              --ignore-time --transfer-all \
-              deploy/ /htdocs/;
+            mirror --reverse --verbose --no-perms --no-symlinks --transfer-all deploy/ /htdocs/;
             bye;
           "
