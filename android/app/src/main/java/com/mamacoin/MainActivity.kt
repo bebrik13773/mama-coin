@@ -1,6 +1,8 @@
 package com.mamacoin
 
 import android.annotation.SuppressLint
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.webkit.*
 import android.widget.Toast
@@ -11,6 +13,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
 
+    // Основной URL — грузим с сервера
+    private val REMOTE_URL = "https://mama-coin.ct.ws"
+    // Fallback — локальные assets если нет сети
+    private val LOCAL_URL  = "file:///android_asset/web/index.html"
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,38 +26,62 @@ class MainActivity : AppCompatActivity() {
         webView = findViewById(R.id.webview)
 
         webView.settings.apply {
-            javaScriptEnabled       = true
-            domStorageEnabled       = true       // нужно для localStorage
-            allowFileAccess         = true
-            allowContentAccess      = true
-            databaseEnabled         = true
-            mixedContentMode        = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            cacheMode               = WebSettings.LOAD_DEFAULT
+            javaScriptEnabled        = true
+            domStorageEnabled        = true
+            allowFileAccess          = true
+            allowContentAccess       = true
+            databaseEnabled          = true
+            mixedContentMode         = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            cacheMode                = WebSettings.LOAD_DEFAULT
             setSupportZoom(false)
-            builtInZoomControls     = false
-            displayZoomControls     = false
+            builtInZoomControls      = false
+            displayZoomControls      = false
+            // Разрешаем fetch/XHR к внешним URL из любого origin
+            allowUniversalAccessFromFileURLs = true
+            allowFileAccessFromFileURLs      = true
         }
 
-        // Android → JS мост
         webView.addJavascriptInterface(AndroidBridge(), "MamaCoinAndroid")
 
         webView.webViewClient = object : WebViewClient() {
+
             override fun onPageFinished(view: WebView?, url: String?) {
-                // Передаём FCM токен в веб-приложение
+                // Передаём FCM токен
                 FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
                     webView.evaluateJavascript(
-                        "if(window.MamaCoinApp) window.MamaCoinApp.onFcmToken('$token');",
+                        "if(window.MamaCoinApp) window.MamaCoinApp.onFcmToken('${token}');",
                         null
                     )
+                }
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                // Если упал основной фрейм удалённого URL — грузим локальный fallback
+                if (request?.isForMainFrame == true && request.url.toString().startsWith("https://mama-coin.ct.ws")) {
+                    view?.loadUrl(LOCAL_URL)
                 }
             }
         }
 
         webView.webChromeClient = WebChromeClient()
 
-        // Загружаем веб-приложение
-        // В DEBUG — загружаем с assets; в продакшене можно грузить с сервера
-        webView.loadUrl("file:///android_asset/web/index.html")
+        // Грузим с сервера (там всегда актуальная версия)
+        // Если нет сети — из assets
+        if (isOnline()) {
+            webView.loadUrl(REMOTE_URL)
+        } else {
+            webView.loadUrl(LOCAL_URL)
+        }
+    }
+
+    private fun isOnline(): Boolean {
+        val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+        val cap = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+        return cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
     override fun onBackPressed() {

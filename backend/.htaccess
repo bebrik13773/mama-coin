@@ -1,0 +1,5 @@
+# Запрещаем прямой доступ к backend кроме api/index.php
+<FilesMatch "^(?!index\.php).*\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>

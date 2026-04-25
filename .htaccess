@@ -1,31 +1,31 @@
 Options -Indexes
+Options -MultiViews
 
-# Routing для API
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
 
-    # API запросы → backend/api/index.php
-    RewriteRule ^api/(.*)$ backend/api/index.php/$1 [QSA,L]
+    # API: /api/что-угодно → backend/api/index.php с PATH_INFO
+    RewriteRule ^api/?$ backend/api/index.php [QSA,L]
+    RewriteRule ^api/(.+)$ backend/api/index.php/$1 [QSA,L]
 
-    # Всё остальное → web/index.html (SPA)
+    # SPA fallback — всё остальное → web/index.html
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ web/index.html [QSA,L]
 </IfModule>
 
-# Кэширование статики
+# Запрещаем прямой доступ к config.php
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Кэш для статики
 <IfModule mod_expires.c>
     ExpiresActive On
-    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType text/css              "access plus 1 week"
     ExpiresByType application/javascript "access plus 1 week"
-    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/png             "access plus 1 month"
+    ExpiresByType image/jpeg            "access plus 1 month"
 </IfModule>
-
-# Безопасность
-<FilesMatch "\.(php)$">
-    <If "%{REQUEST_URI} =~ m#^/backend/config/#">
-        Order Allow,Deny
-        Deny from all
-    </If>
-</FilesMatch>
