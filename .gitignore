@@ -1,0 +1,17 @@
+# Android build
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/google-services.json
+
+# Backend secrets
+backend/config/config.php
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Node (если понадобится)
+node_modules/

@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -17,22 +18,35 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      # Копируем web/ в android assets перед сборкой
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
+
       - name: Copy web assets into Android
         run: |
           mkdir -p android/app/src/main/assets
           cp -r web android/app/src/main/assets/web
 
-      - name: Make gradlew executable
-        run: chmod +x android/gradlew
+      - name: Create dummy google-services.json
+        run: |
+          cat > android/app/google-services.json << 'JSON'
+          {
+            "project_info": { "project_number": "000000000000", "project_id": "mamacoin-dummy", "storage_bucket": "mamacoin-dummy.appspot.com" },
+            "client": [{
+              "client_info": { "mobilesdk_app_id": "1:000000000000:android:0000000000000000", "android_client_info": { "package_name": "com.mamacoin" } },
+              "oauth_client": [], "api_key": [{ "current_key": "dummy" }], "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+            }],
+            "configuration_version": "1"
+          }
+          JSON
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
         working-directory: android
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: mamacoin-debug-${{ github.run_number }}
