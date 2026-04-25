@@ -90,20 +90,25 @@ jobs:
       # ── Собираем ТОЛЬКО нужные файлы для деплоя ──────────
       - name: Generate backend config.php
         if: github.ref == 'refs/heads/main'
+        env:
+          DB_PASS: ${{ secrets.DB_PASS }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          FCM_KEY: ${{ secrets.FCM_SERVER_KEY }}
         run: |
-          cat > backend/config/config.php << PHP
-          <?php
-          define('DB_HOST',    'sql203.infinityfree.com');
-          define('DB_NAME',    'if0_41745763_app');
-          define('DB_USER',    'if0_41745763');
-          define('DB_PASS',    '${{ secrets.DB_PASS }}');
-          define('DB_CHARSET', 'utf8mb4');
-          define('JWT_SECRET',       '${{ secrets.JWT_SECRET }}');
-          define('JWT_EXPIRE_HOURS',  720);
-          define('FCM_SERVER_KEY',   '${{ secrets.FCM_SERVER_KEY }}');
-          define('APP_URL',    'https://mama-coin.ct.ws');
-          define('DEBUG_MODE', false);
-          PHP
+          cat > backend/config/config.php << PHPEOF
+<?php
+define('DB_HOST',          'sql203.infinityfree.com');
+define('DB_NAME',          'if0_41745763_app');
+define('DB_USER',          'if0_41745763');
+define('DB_PASS',          '${DB_PASS}');
+define('DB_CHARSET',       'utf8mb4');
+define('JWT_SECRET',       '${JWT_SECRET}');
+define('JWT_EXPIRE_HOURS', 720);
+define('FCM_SERVER_KEY',   '${FCM_KEY}');
+define('APP_URL',          'https://mama-coin.ct.ws');
+define('DEBUG_MODE',       false);
+PHPEOF
+          echo "config.php generated, size: $(wc -c < backend/config/config.php) bytes"
 
       - name: Prepare deploy folder
         if: github.ref == 'refs/heads/main'

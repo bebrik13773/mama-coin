@@ -1,16 +1,6 @@
 // js/app.js — Entry point
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Глобальный оверлей для шитов
-  if (!document.getElementById('overlay')) {
-    const ov = document.createElement('div');
-    ov.id = 'overlay';
-    ov.className = 'overlay';
-    ov.onclick = closeAllSheets;
-    document.body.appendChild(ov);
-  }
-
-  // Маршрутизация при старте
   const token = Store.token();
   const role  = Store.role();
 
@@ -23,30 +13,41 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen('splash');
   }
 
-  // Предотвращаем pull-to-refresh на мобиле
+  // Предотвращаем pull-to-refresh
   document.body.addEventListener('touchmove', e => {
     if (e.target === document.body) e.preventDefault();
   }, { passive: false });
 });
 
-// Обработка кнопки "назад" на Android
+// Убираем шторки родителя при смене экрана
+const _origShowScreen = showScreen;
+function showScreen(id) {
+  // Удаляем шторки родителя если уходим с parent экрана
+  if (id !== 'parent') {
+    const sheets = document.getElementById('p-sheets');
+    if (sheets) sheets.remove();
+  }
+  _origShowScreen(id);
+}
+
+// Кнопка назад на Android
 document.addEventListener('backbutton', () => {
+  // Сначала закрываем открытую шторку
+  const overlay = document.getElementById('p-overlay');
+  if (overlay && overlay.classList.contains('open')) {
+    closeAllSheets();
+    return;
+  }
   const role = Store.role();
   if (role === 'parent' && parentTab !== 'home') {
     switchParentTab('home');
   } else if (role === 'child' && childTab !== 'home') {
     switchChildTab('home');
-  } else if (!Store.token()) {
-    // Already on splash, do nothing
   }
 }, false);
 
-// Экспорт для Android WebView
 window.MamaCoinApp = {
-  onFcmToken(token) {
-    // Called from Android when FCM token is received
-    console.log('FCM token:', token);
-  },
+  onFcmToken(token) { console.log('FCM:', token); },
   reloadData() {
     const role = Store.role();
     if (role === 'parent') renderParent(parentTab);
@@ -54,10 +55,11 @@ window.MamaCoinApp = {
   }
 };
 
-// Обработка closeAllSheets для child экрана (у них нет overlay своего)
 function closeAllSheets() {
-  document.querySelectorAll('.bottom-sheet').forEach(s => s.classList.remove('open'));
-  document.querySelectorAll('.overlay').forEach(o => o.classList.remove('open'));
-  const pOverlay = document.getElementById('p-overlay');
-  if (pOverlay) pOverlay.classList.remove('open');
+  const overlay     = document.getElementById('p-overlay');
+  const createSheet = document.getElementById('p-create-task-sheet');
+  const rejectSheet = document.getElementById('p-reject-sheet');
+  if (overlay)     overlay.classList.remove('open');
+  if (createSheet) createSheet.classList.remove('open');
+  if (rejectSheet) rejectSheet.classList.remove('open');
 }

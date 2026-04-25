@@ -34,6 +34,16 @@ async function apiRequest(method, endpoint, body = null) {
   try {
     const res = await fetch(API_BASE + endpoint, opts);
     const data = await res.json();
+
+    // Если сервер вернул 401 — токен устарел или невалидный, нужно перелогиниться
+    if (res.status === 401) {
+      Store.clear();
+      showScreen('splash');
+      renderSplash();
+      toast('Сессия истекла, войди снова', 'error');
+      return { ok: false, error: 'Unauthorized', status: 401 };
+    }
+
     return { ok: data.ok, data: data.data, error: data.error, status: res.status };
   } catch (e) {
     return { ok: false, error: 'Нет подключения к серверу', status: 0 };

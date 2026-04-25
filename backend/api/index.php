@@ -39,6 +39,7 @@ try {
         case 'exchange':     require __DIR__ . '/routes/exchange.php';    break;
         case 'leaderboard':  require __DIR__ . '/routes/leaderboard.php'; break;
         case 'ping':         Response::success(['status' => 'ok', 'time' => date('c')]); break;
+        case 'debug-token':  require __DIR__ . '/routes/debug.php'; break;
         default:             Response::error('Not found', 404);
     }
 } catch (Exception $e) {

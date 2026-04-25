@@ -28,11 +28,19 @@ function drawParent() {
     <div id="p-tab-home"     class="p-tab ${parentTab==='home'    ?'':'hidden'}">${renderParentHome()}</div>
     <div id="p-tab-tasks"    class="p-tab ${parentTab==='tasks'   ?'':'hidden'}">${renderParentTasks()}</div>
     <div id="p-tab-review"   class="p-tab ${parentTab==='review'  ?'':'hidden'}">${renderParentReview()}</div>
-    <div id="p-tab-settings" class="p-tab ${parentTab==='settings'?'':'hidden'}">${renderParentSettings()}
-    </div>
+    <div id="p-tab-settings" class="p-tab ${parentTab==='settings'?'':'hidden'}">${renderParentSettings()}</div>
     ${parentBottomNav()}
+  `;
 
-    <!-- Оверлей и шторки — ВНЕ табов, в самом конце -->
+  // Шторки рендерим в body чтобы position:fixed работало правильно
+  // (внутри overflow:auto контейнера fixed позиционирование ломается)
+  let sheetsEl = document.getElementById('p-sheets');
+  if (!sheetsEl) {
+    sheetsEl = document.createElement('div');
+    sheetsEl.id = 'p-sheets';
+    document.body.appendChild(sheetsEl);
+  }
+  sheetsEl.innerHTML = `
     <div id="p-overlay" class="overlay" onclick="closeAllSheets()"></div>
     <div id="p-reject-sheet" class="bottom-sheet">
       <div class="sheet-handle"></div>
