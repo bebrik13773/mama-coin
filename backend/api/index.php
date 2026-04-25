@@ -40,6 +40,7 @@ try {
         case 'leaderboard':  require __DIR__ . '/routes/leaderboard.php'; break;
         case 'ping':         Response::success(['status' => 'ok', 'time' => date('c')]); break;
         case 'debug-token':  require __DIR__ . '/routes/debug.php'; break;
+        case 'refresh':      require __DIR__ . '/routes/refresh.php'; break;
         default:             Response::error('Not found', 404);
     }
 } catch (Exception $e) {

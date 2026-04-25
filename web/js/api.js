@@ -85,6 +85,36 @@ const api = {
   getPendingExchanges: ()  => apiRequest('GET',  'exchange?status=pending'),
 };
 
+// ── Re-login prompt on 401 ───────────────────────────────
+function showReloginPrompt() {
+  // Убираем шторки родителя если есть
+  const sheets = document.getElementById('p-sheets');
+  if (sheets) sheets.remove();
+
+  const el = document.getElementById('screen-parent') || document.getElementById('screen-child');
+  const target = el || document.body;
+
+  // Показываем поверх всего
+  let prompt = document.getElementById('relogin-prompt');
+  if (!prompt) {
+    prompt = document.createElement('div');
+    prompt.id = 'relogin-prompt';
+    document.body.appendChild(prompt);
+  }
+  prompt.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;';
+  prompt.innerHTML = `
+    <div style="font-size:2rem;margin-bottom:16px;">🔐</div>
+    <h2 style="margin-bottom:8px;text-align:center;">Сессия истекла</h2>
+    <p style="color:var(--muted);text-align:center;margin-bottom:24px;font-size:0.9rem;">
+      Войди снова чтобы продолжить
+    </p>
+    <button class="btn btn-gold" style="max-width:300px;"
+      onclick="document.getElementById('relogin-prompt').remove();renderSplash();showScreen('splash');">
+      Войти снова
+    </button>
+  `;
+}
+
 // ── Toast ────────────────────────────────────────────────
 let toastTimer;
 function toast(msg, type = 'success') {
