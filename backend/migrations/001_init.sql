@@ -1,0 +1,89 @@
+-- МамаКоин — Инициализация базы данных v1.0
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE IF NOT EXISTS `users` (
+  `id`            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `name`          VARCHAR(100) NOT NULL,
+  `email`         VARCHAR(255) NOT NULL UNIQUE,
+  `password_hash` VARCHAR(255) NOT NULL,
+  `fcm_token`     VARCHAR(255) DEFAULT NULL,
+  `created_at`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `families` (
+  `id`            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `parent_id`     INT UNSIGNED NOT NULL,
+  `invite_code`   CHAR(6) NOT NULL UNIQUE,
+  `coin_rate`     DECIMAL(8,2) DEFAULT 50.00 COMMENT 'Рублей за 100 монет',
+  `monthly_limit` INT UNSIGNED DEFAULT 500,
+  `created_at`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`parent_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `children` (
+  `id`             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `family_id`      INT UNSIGNED NOT NULL,
+  `name`           VARCHAR(100) NOT NULL,
+  `avatar`         VARCHAR(10) DEFAULT '🧒',
+  `fcm_token`      VARCHAR(255) DEFAULT NULL,
+  `coins_balance`  INT UNSIGNED DEFAULT 0,
+  `created_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`family_id`) REFERENCES `families`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `tasks` (
+  `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `family_id`       INT UNSIGNED NOT NULL,
+  `title`           VARCHAR(200) NOT NULL,
+  `description`     TEXT DEFAULT NULL,
+  `emoji`           VARCHAR(10) DEFAULT '📋',
+  `type`            ENUM('common','individual') NOT NULL DEFAULT 'common',
+  `target_child_id` INT UNSIGNED DEFAULT NULL,
+  `is_daily`        TINYINT(1) DEFAULT 0,
+  `one_time_claim`  TINYINT(1) DEFAULT 0,
+  `coins_reward`    INT UNSIGNED NOT NULL DEFAULT 10,
+  `is_active`       TINYINT(1) DEFAULT 1,
+  `created_at`      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`family_id`) REFERENCES `families`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`target_child_id`) REFERENCES `children`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `task_claims` (
+  `id`            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `task_id`       INT UNSIGNED NOT NULL,
+  `child_id`      INT UNSIGNED NOT NULL,
+  `status`        ENUM('in_progress','pending','approved','rejected') DEFAULT 'in_progress',
+  `claimed_at`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `submitted_at`  TIMESTAMP NULL DEFAULT NULL,
+  `reviewed_at`   TIMESTAMP NULL DEFAULT NULL,
+  `reject_reason` VARCHAR(255) DEFAULT NULL,
+  FOREIGN KEY (`task_id`)  REFERENCES `tasks`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`child_id`) REFERENCES `children`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `coin_transactions` (
+  `id`           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `child_id`     INT UNSIGNED NOT NULL,
+  `amount`       INT NOT NULL,
+  `type`         ENUM('task_reward','exchange','bonus','penalty') NOT NULL,
+  `reference_id` INT UNSIGNED DEFAULT NULL,
+  `note`         VARCHAR(255) DEFAULT NULL,
+  `created_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`child_id`) REFERENCES `children`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `exchange_requests` (
+  `id`           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `child_id`     INT UNSIGNED NOT NULL,
+  `coins_amount` INT UNSIGNED NOT NULL,
+  `rub_amount`   DECIMAL(10,2) NOT NULL,
+  `status`       ENUM('pending','approved','rejected') DEFAULT 'pending',
+  `created_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `reviewed_at`  TIMESTAMP NULL DEFAULT NULL,
+  FOREIGN KEY (`child_id`) REFERENCES `children`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET FOREIGN_KEY_CHECKS = 1;
