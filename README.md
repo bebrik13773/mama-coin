@@ -5,6 +5,7 @@
 [![Build APK](https://github.com/bebrik13773/mama-coin/actions/workflows/build.yml/badge.svg)](https://github.com/bebrik13773/mama-coin/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 [![Android](https://img.shields.io/github/v/release/bebrik13773/mama-coin)](https://github.com/bebrik13773/mama-coin/releases/tag/latest)
+[![Code size](https://img.shields.io/github/languages/code-size/badges/shields.svg)
 ---
 
 ## 📱 Что это
