@@ -4,7 +4,7 @@
 
 [![Build APK](https://github.com/bebrik13773/mama-coin/actions/workflows/build.yml/badge.svg)](https://github.com/bebrik13773/mama-coin/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
-
+[![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/bebrik13773/mama-coin/releases/download/latest/mamacoin-latest.apk)
 ---
 
 ## 📱 Что это
