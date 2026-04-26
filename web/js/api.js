@@ -86,15 +86,18 @@ const api = {
 };
 
 // ── Re-login prompt on 401 ───────────────────────────────
+let _reloginShown = false;
 function showReloginPrompt() {
-  // Убираем шторки родителя если есть
+  // Защита от рекурсии — показываем только один раз
+  if (_reloginShown) return;
+  _reloginShown = true;
+
+  Store.clear();
+
+  // Убираем шторки
   const sheets = document.getElementById('p-sheets');
   if (sheets) sheets.remove();
 
-  const el = document.getElementById('screen-parent') || document.getElementById('screen-child');
-  const target = el || document.body;
-
-  // Показываем поверх всего
   let prompt = document.getElementById('relogin-prompt');
   if (!prompt) {
     prompt = document.createElement('div');
@@ -108,10 +111,12 @@ function showReloginPrompt() {
     <p style="color:var(--muted);text-align:center;margin-bottom:24px;font-size:0.9rem;">
       Войди снова чтобы продолжить
     </p>
-    <button class="btn btn-gold" style="max-width:300px;"
-      onclick="document.getElementById('relogin-prompt').remove();renderSplash();showScreen('splash');">
-      Войти снова
-    </button>
+    <button class="btn btn-gold" style="max-width:300px;" onclick="
+      document.getElementById('relogin-prompt').remove();
+      _reloginShown = false;
+      renderSplash();
+      showScreen('splash');
+    ">Войти снова</button>
   `;
 }
 
