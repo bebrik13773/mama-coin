@@ -15,11 +15,24 @@ async function loadParentData() {
     api.getChildren(), api.getTasks(), api.getPending(),
     api.getFamily(),   api.getPendingExchanges()
   ]);
+
+  // Debug: показать ошибки
+  [['children',ch],['tasks',tk],['pending',pd],['family',fm],['exchanges',ex]].forEach(([name,r]) => {
+    if (!r.ok) console.error('[loadParentData]', name, 'status:', r.status, 'error:', r.error);
+  });
+
   parentData.children  = ch.data  || [];
   parentData.tasks     = tk.data  || [];
   parentData.pending   = pd.data  || [];
   parentData.family    = fm.data  || null;
   parentData.exchanges = ex.data  || [];
+
+  // Если все запросы вернули 401 — значит токен невалиден
+  const allUnauthorized = [ch,tk,pd,fm,ex].every(r => r.status === 401);
+  if (allUnauthorized) {
+    Store.clear();
+    showReloginPrompt();
+  }
 }
 
 function drawParent() {

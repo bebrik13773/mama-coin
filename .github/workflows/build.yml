@@ -33,11 +33,7 @@ jobs:
 
       - name: Create google-services.json stub
         run: |
-          echo '{
-            "project_info": {"project_number":"000000000000","project_id":"mamacoin-stub","storage_bucket":"mamacoin-stub.appspot.com"},
-            "client": [{"client_info": {"mobilesdk_app_id": "1:000000000000:android:0000000000000000000000","android_client_info": {"package_name": "com.mamacoin"}},"oauth_client": [],"api_key": [{"current_key": "stub"}],"services": {"appinvite_service": {"other_platform_oauth_client": []}}}],
-            "configuration_version": "1"
-          }' > android/app/google-services.json
+          echo '{"project_info":{"project_number":"000000000000","project_id":"mamacoin-stub","storage_bucket":"mamacoin-stub.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000000000","android_client_info":{"package_name":"com.mamacoin"}},"oauth_client":[],"api_key":[{"current_key":"stub"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}}],"configuration_version":"1"}' > android/app/google-services.json
 
       - name: Build Debug APK
         run: gradle assembleDebug
@@ -46,8 +42,7 @@ jobs:
       - name: Rename APK
         run: |
           mkdir -p release-artifacts
-          cp android/app/build/outputs/apk/debug/app-debug.apk \
-             release-artifacts/mamacoin-v${{ github.run_number }}.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-artifacts/mamacoin-v${{ github.run_number }}.apk
 
       - name: Delete existing latest release
         if: github.ref == 'refs/heads/main'
@@ -63,10 +58,7 @@ jobs:
         with:
           tag_name: latest
           name: "МамаКоин — сборка #${{ github.run_number }}"
-          body: |
-            🪙 **МамаКоин** — сборка #${{ github.run_number }}
-            📱 Скачай APK ниже
-            🌐 Веб: https://mama-coin.ct.ws
+          body: "🪙 Сборка #${{ github.run_number }} | 🌐 https://mama-coin.ct.ws"
           files: release-artifacts/mamacoin-v${{ github.run_number }}.apk
           make_latest: true
         env:
@@ -75,36 +67,18 @@ jobs:
       - name: Generate backend config.php
         if: github.ref == 'refs/heads/main'
         env:
-          MC_DB_PASS:    ${{ secrets.DB_PASS }}
+          MC_DB_PASS: ${{ secrets.DB_PASS }}
           MC_JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          MC_FCM_KEY:    ${{ secrets.FCM_SERVER_KEY }}
-        run: |
-          python3 - << 'PYEOF'
-          import os
-          php = "\n".join([
-              "<?php",
-              "define('DB_HOST',          'sql203.infinityfree.com');",
-              "define('DB_NAME',          'if0_41745763_app');",
-              "define('DB_USER',          'if0_41745763');",
-              "define('DB_PASS',          '" + os.environ.get('MC_DB_PASS','') + "');",
-              "define('DB_CHARSET',       'utf8mb4');",
-              "define('JWT_SECRET',       '" + os.environ.get('MC_JWT_SECRET','') + "');",
-              "define('JWT_EXPIRE_HOURS', 720);",
-              "define('FCM_SERVER_KEY',   '" + os.environ.get('MC_FCM_KEY','') + "');",
-              "define('APP_URL',          'https://mama-coin.ct.ws');",
-              "define('DEBUG_MODE',       false);",
-          ]) + "\n"
-          open('backend/config/config.php', 'w').write(php)
-          print('config.php generated:', len(php), 'bytes')
-          PYEOF
+          MC_FCM_KEY: ${{ secrets.FCM_SERVER_KEY }}
+        run: python3 scripts/gen_config.py
 
       - name: Prepare deploy folder
         if: github.ref == 'refs/heads/main'
         run: |
           mkdir -p deploy
-          cp -r web        deploy/web
-          cp -r backend/.  deploy/backend
-          cp    .htaccess  deploy/.htaccess
+          cp -r web       deploy/web
+          cp -r backend/. deploy/backend
+          cp .htaccess    deploy/.htaccess
           echo "Deploy size: $(du -sh deploy/ | cut -f1)"
           find deploy -maxdepth 3 -type f | sort
 
