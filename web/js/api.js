@@ -2,22 +2,44 @@
 
 const API_BASE = window.MAMACOIN_API || 'https://mama-coin.ct.ws/api/';
 
-// ── Token storage ────────────────────────────────────────
+// ── Token storage (localStorage + cookie для диагностики) ─
 const Store = {
+  // localStorage
   get: (k)    => localStorage.getItem(k),
   set: (k, v) => localStorage.setItem(k, v),
   del: (k)    => localStorage.removeItem(k),
-  clear: ()   => { ['mc_token','mc_role','mc_name','mc_family'].forEach(k => localStorage.removeItem(k)); },
 
-  token:  () => Store.get('mc_token'),
-  role:   () => Store.get('mc_role'),
-  name:   () => Store.get('mc_name'),
-  family: () => { try { return JSON.parse(Store.get('mc_family') || 'null'); } catch { return null; } },
+  // Cookie helpers
+  setCookie(name, value, days = 30) {
+    const exp = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)};expires=${exp};path=/;SameSite=Lax`;
+  },
+  getCookie(name) {
+    const m = document.cookie.match('(?:^|;)\\s*' + name + '=([^;]*)');
+    return m ? decodeURIComponent(m[1]) : null;
+  },
+  delCookie(name) {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+  },
+
+  clear() {
+    ['mc_token','mc_role','mc_name','mc_family'].forEach(k => localStorage.removeItem(k));
+    ['mc_token','mc_role','mc_name'].forEach(k => Store.delCookie(k));
+  },
+
+  token()  { return Store.get('mc_token')  || Store.getCookie('mc_token'); },
+  role()   { return Store.get('mc_role')   || Store.getCookie('mc_role'); },
+  name()   { return Store.get('mc_name')   || Store.getCookie('mc_name'); },
+  family() { try { return JSON.parse(Store.get('mc_family') || 'null'); } catch { return null; } },
 
   save(token, role, name, family = null) {
+    // Сохраняем в оба места
     Store.set('mc_token', token);
     Store.set('mc_role',  role);
     Store.set('mc_name',  name);
+    Store.setCookie('mc_token', token);
+    Store.setCookie('mc_role',  role);
+    Store.setCookie('mc_name',  name);
     if (family) Store.set('mc_family', JSON.stringify(family));
   }
 };
