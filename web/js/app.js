@@ -1,8 +1,20 @@
 // js/app.js — Entry point
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const token = Store.token();
   const role  = Store.role();
+
+  if (token) {
+    // Проверяем токен перед входом — тихо чистим если невалиден
+    const check = await apiRequest('GET', 'me');
+    if (check.status === 401) {
+      console.warn('Token invalid, clearing session');
+      Store.clear();
+      renderSplash();
+      showScreen('splash');
+      return;
+    }
+  }
 
   if (token && role === 'parent') {
     renderParent();
