@@ -468,11 +468,12 @@ function copyCode() {
   }
 }
 
-function doLogout() {
+async function doLogout() {
   if (!confirm('Выйти из аккаунта?')) return;
+  await api.logout();
   Store.clear();
-  showScreen('splash');
   renderSplash();
+  showScreen('splash');
 }
 
 function esc(s) {

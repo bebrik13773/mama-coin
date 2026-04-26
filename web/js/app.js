@@ -1,26 +1,27 @@
 // js/app.js — Entry point
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const token = Store.token();
-  const role  = Store.role();
 
-  if (token) {
-    // Проверяем токен перед входом — тихо чистим если невалиден
-    const check = await apiRequest('GET', 'me');
-    if (check.status === 401) {
-      console.warn('Token invalid, clearing session');
-      Store.clear();
+  // Проверяем есть ли активная сессия на сервере
+  const check = await api.me();
+
+  if (check.ok && check.data) {
+    const role = check.data.role;
+    // Синхронизируем localStorage с данными сессии
+    Store.set('mc_role', role);
+    Store.set('mc_name', check.data.name || '');
+
+    if (role === 'parent') {
+      renderParent();
+    } else if (role === 'child') {
+      renderChild();
+    } else {
       renderSplash();
       showScreen('splash');
-      return;
     }
-  }
-
-  if (token && role === 'parent') {
-    renderParent();
-  } else if (token && role === 'child') {
-    renderChild();
   } else {
+    // Нет сессии — показываем сплеш
+    Store.clear();
     renderSplash();
     showScreen('splash');
   }
@@ -33,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Кнопка назад на Android
 document.addEventListener('backbutton', () => {
-  // Сначала закрываем открытую шторку
   const overlay = document.getElementById('p-overlay');
   if (overlay && overlay.classList.contains('open')) {
     closeAllSheets();

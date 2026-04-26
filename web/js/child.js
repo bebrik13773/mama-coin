@@ -314,9 +314,10 @@ async function requestExchange() {
   else toast(r.error, 'error');
 }
 
-function doChildLogout() {
+async function doChildLogout() {
   if (!confirm('Выйти?')) return;
+  await api.logout();
   Store.clear();
-  showScreen('splash');
   renderSplash();
+  showScreen('splash');
 }

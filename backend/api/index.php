@@ -1,6 +1,9 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+// credentials:include требует конкретный origin, не *
+$origin = $_SERVER['HTTP_ORIGIN'] ?? 'https://mama-coin.ct.ws';
+header('Access-Control-Allow-Origin: ' . $origin);
+header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
@@ -29,7 +32,7 @@ $id       = $segments[1] ?? null;
 
 try {
     switch ($resource) {
-        case 'register': case 'login': case 'child-join':
+        case 'register': case 'login': case 'child-join': case 'logout':
             require __DIR__ . '/routes/auth.php'; break;
         case 'family':       require __DIR__ . '/routes/family.php';      break;
         case 'children':     require __DIR__ . '/routes/children.php';    break;
