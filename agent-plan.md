@@ -18,9 +18,9 @@
 
 ### CSS / UI
 - [x] `css/app.css` — полная тёмная тема, все компоненты
-- [ ] Добавить Google Fonts (Nunito) через `<link>` в index.html
-- [ ] Сделать иконку приложения (192×192, 512×512 PNG) и положить в `web/icons/`
-- [ ] Заполнить `manifest.json` финальными иконками
+- [x] Добавить Google Fonts (Nunito) через `<link>` в index.html
+- [x] Сделать иконку приложения — SVG + PNG mipmap для Android
+- [x] Заполнить `manifest.json` финальными иконками (SVG any)
 
 ### JS — Auth
 - [x] `js/api.js` — API-клиент, Store (localStorage), toast, роутер экранов
@@ -32,10 +32,10 @@
 - [x] `js/parent.js` — Home, Tasks, Review, Settings
 - [x] Bottom sheet создания задания
 - [x] Одобрение / отклонение заданий и обменов
-- [ ] Кнопка «Обновить» (pull-to-refresh или кнопка)
-- [ ] Фильтры на вкладке Задания (ежедневные / общие / личные)
-- [ ] Форма редактирования задания (PUT /tasks/{id})
-- [ ] Раздел «Дети» — добавление ребёнка через QR-код / кнопка показа кода
+- [x] Авто-обновление каждые 15 секунд
+- [ ] Фильтры на вкладке Задания
+- [ ] Форма редактирования задания
+- [x] Карточка ребёнка с кодом входа + кнопка личного задания
 - [ ] История транзакций монет по каждому ребёнку
 
 ### JS — Ребёнок
@@ -44,8 +44,8 @@
 - [x] Запрос обмена монет
 - [x] Лидерборд с подиумом
 - [ ] История транзакций в кошельке
-- [ ] Анимация при начислении монет (конфетти / bounce)
-- [ ] Экран уведомлений (список одобрений/отклонений)
+- [ ] Анимация при начислении монет
+- [ ] Экран уведомлений
 
 ---
 
@@ -63,12 +63,12 @@
 - [x] `routes/claims.php` — POST/PUT/GET /claims
 - [x] `routes/exchange.php` — POST/PUT /exchange
 - [x] `routes/leaderboard.php` — GET /leaderboard
-- [ ] `routes/wallet.php` — GET /wallet (баланс + история + лимит)
-- [ ] `routes/children.php` — GET /children, DELETE /children/{id}
-- [ ] `routes/family.php` — GET/PUT /family
+- [x] `routes/wallet.php`
+- [x] `routes/children.php` — GET, DELETE, reset-code
+- [x] `routes/family.php`
 - [ ] `routes/notifications.php` — GET /notifications (история уведомлений)
-- [ ] Ежедневный сброс ежедневных заданий (cron или при запросе)
-- [ ] Защита от дублирования claim при гонке запросов (транзакция БД)
+- [ ] Ежедневный сброс ежедневных заданий
+- [x] Защита от дублирования claim (транзакция БД)
 
 ### Деплой
 - [x] Зарегистрировать домен / аккаунт на InfinityFree
@@ -90,10 +90,10 @@
 - [x] `build.gradle` (app + project), `settings.gradle`
 
 ### Доделать
-- [ ] Добавить `google-services.json` (Firebase, через секрет GitHub)
+- [x] google-services.json — stub в CI
 - [ ] Настроить подпись APK (keystore) для релиза
-- [ ] Иконка приложения — `mipmap-*/ic_launcher.png`
-- [ ] Splash screen (windowBackground) пока грузится WebView
+- [x] Иконка — PNG для всех mipmap + adaptive icon
+- [x] Loading screen + error screen в Activity
 - [ ] Обработка deep links (если нужны)
 - [ ] Тест на реальном устройстве
 

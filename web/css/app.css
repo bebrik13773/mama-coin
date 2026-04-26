@@ -49,12 +49,9 @@ html, body {
   inset: 0;
   opacity: 0;
   pointer-events: none;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
   transition: opacity var(--transition), transform var(--transition);
   transform: translateX(20px);
-  scrollbar-width: none;
 }
 .screen::-webkit-scrollbar { display: none; }
 .screen.active {
@@ -93,7 +90,8 @@ h3 { font-size: 1rem;   font-weight: 700; }
 .page {
   min-height: 100%;
   padding-top: calc(var(--safe-top) + 8px);
-  padding-bottom: calc(var(--safe-bottom) + 72px);
+  padding-bottom: 80px;
+  overflow-y: auto;
 }
 .page-content { padding: 0 16px; }
 
@@ -126,7 +124,7 @@ h3 { font-size: 1rem;   font-weight: 700; }
   border-top: 1.5px solid var(--border);
   display: flex;
   padding: 6px 0 calc(var(--safe-bottom) + 6px);
-  z-index: 100;
+  z-index: 150;
 }
 .nav-item {
   flex: 1;
@@ -682,3 +680,13 @@ h3 { font-size: 1rem;   font-weight: 700; }
 .empty-state .icon { font-size: 3.5rem; margin-bottom: 12px; }
 .empty-state h3    { font-size: 1rem; margin-bottom: 6px; }
 .empty-state p     { font-size: 0.82rem; color: var(--muted); }
+
+/* Tab content scrolls, not the screen */
+.p-tab, .c-tab {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.p-tab::-webkit-scrollbar, .c-tab::-webkit-scrollbar { display: none; }

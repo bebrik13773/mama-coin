@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  <!-- Coin -->
+  <path android:fillColor="#F5C842"
+      android:pathData="M54,12 A42,42 0 1,1 54,96 A42,42 0 1,1 54,12 Z"/>
+  <!-- Inner ring -->
+  <path android:fillColor="#0000"
+      android:strokeColor="#FFE066"
+      android:strokeWidth="2"
+      android:pathData="M54,18 A36,36 0 1,1 54,90 A36,36 0 1,1 54,18 Z"/>
+  <!-- Letter М -->
+  <path android:fillColor="#1A1000"
+      android:pathData="M32,70 L32,38 L44,38 L54,58 L64,38 L76,38 L76,70 L68,70 L68,52 L58,70 L50,70 L40,52 L40,70 Z"/>
+</vector>

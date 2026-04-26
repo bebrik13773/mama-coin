@@ -34,6 +34,7 @@ function runMigrations(PDO $db): void {
         `avatar`        VARCHAR(10) DEFAULT '🧒',
         `fcm_token`     VARCHAR(255) DEFAULT NULL,
         `coins_balance` INT UNSIGNED DEFAULT 0,
+        `child_code`    CHAR(6) DEFAULT NULL UNIQUE COMMENT 'Код повторного входа',
         `created_at`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (`family_id`) REFERENCES `families`(`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
@@ -91,6 +92,10 @@ function runMigrations(PDO $db): void {
         FOREIGN KEY (`child_id`) REFERENCES `children`(`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    // Добавляем child_code если нет
+    try {
+        $db->exec("ALTER TABLE children ADD COLUMN child_code CHAR(6) DEFAULT NULL UNIQUE COMMENT 'Код повторного входа'");
+    } catch (Exception $e) { /* уже есть */ }
     $db->exec("SET FOREIGN_KEY_CHECKS = 1");
 }
 

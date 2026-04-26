@@ -43,30 +43,49 @@ if ($resource === 'login' && $method === 'POST') {
 }
 
 if ($resource === 'child-join' && $method === 'POST') {
-    $name   = trim($body['name']        ?? '');
     $code   = strtoupper(trim($body['invite_code'] ?? ''));
+    $name   = trim($body['name'] ?? '');
     $avatar = $body['avatar'] ?? '🧒';
 
-    if (!$name || !$code) Response::error('Введи имя и код семьи');
+    if (!$code) Response::error('Введи код');
 
+    // Пробуем найти по child_code (повторный вход ребёнка)
+    $s = $db->prepare('SELECT c.*,c.family_id FROM children c WHERE c.child_code=?');
+    $s->execute([$code]);
+    $child = $s->fetch();
+
+    if ($child) {
+        // Повторный вход по личному коду ребёнка
+        $token = Auth::createSession($child['id'], 'child', $child['family_id']);
+        Response::success(['token' => $token, 'child' => $child]);
+    }
+
+    // Иначе — вход по коду семьи (первая регистрация)
+    if (!$name) Response::error('Введи имя');
     $s = $db->prepare('SELECT * FROM families WHERE invite_code=?');
     $s->execute([$code]);
     $fam = $s->fetch();
-    if (!$fam) Response::error('Неверный код семьи');
+    if (!$fam) Response::error('Неверный код — проверь код семьи или личный код');
 
-    $s = $db->prepare('SELECT id FROM children WHERE family_id=? AND name=?');
+    $s = $db->prepare('SELECT * FROM children WHERE family_id=? AND name=?');
     $s->execute([$fam['id'], $name]);
     $ex = $s->fetch();
 
     if ($ex) {
         $cid = $ex['id'];
     } else {
-        $db->prepare('INSERT INTO children (family_id,name,avatar) VALUES (?,?,?)')->execute([$fam['id'], $name, $avatar]);
+        // Генерируем child_code при первой регистрации
+        do {
+            $childCode = strtoupper(substr(md5(uniqid('c', true)), 0, 6));
+            $sc = $db->prepare('SELECT id FROM children WHERE child_code=?');
+            $sc->execute([$childCode]);
+        } while ($sc->fetch());
+        $db->prepare('INSERT INTO children (family_id,name,avatar,child_code) VALUES (?,?,?,?)')->execute([$fam['id'], $name, $avatar, $childCode]);
         $cid = $db->lastInsertId();
     }
 
     $token = Auth::createSession($cid, 'child', $fam['id']);
-    $s = $db->prepare('SELECT id,name,avatar,coins_balance FROM children WHERE id=?');
+    $s = $db->prepare('SELECT * FROM children WHERE id=?');
     $s->execute([$cid]);
     Response::success(['token' => $token, 'child' => $s->fetch()]);
 }
