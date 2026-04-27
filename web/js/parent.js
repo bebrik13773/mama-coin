@@ -35,7 +35,7 @@ function startParentAutoRefresh() {
     if (tab === 'tasks')    document.getElementById('p-tab-tasks')   ?.replaceWith(Object.assign(document.createElement('div'), {id:'p-tab-tasks',   className:'p-tab', innerHTML:renderParentTasks()}));
     if (tab === 'review')   document.getElementById('p-tab-review')  ?.replaceWith(Object.assign(document.createElement('div'), {id:'p-tab-review',  className:'p-tab', innerHTML:renderParentReview()}));
     if (tab === 'settings') document.getElementById('p-tab-settings')?.replaceWith(Object.assign(document.createElement('div'), {id:'p-tab-settings',className:'p-tab', innerHTML:renderParentSettings()}));
-  }, 15000); // каждые 15 сек
+  }, 10000); // каждые 15 сек
 }
 
 function drawParent() {
@@ -135,7 +135,7 @@ async function openChildSheet(childId) {
       </button>
     </div>
 
-    <button class="btn btn-gold" style="margin-bottom:8px;" onclick="closeAllSheets();openCreateTask(${childId})">
+    <button class="btn btn-gold" style="margin-bottom:8px;" onclick="closeAllSheets();setTimeout(()=>openCreateTask(${childId}),150)">
       ➕ Дать личное задание
     </button>
     <button class="btn btn-outline-red" onclick="confirmDeleteChild(${childId},'${esc(child.name)}')">
@@ -146,16 +146,12 @@ async function openChildSheet(childId) {
 }
 
 async function resetChildCode(childId) {
-  const r = await apiRequest('POST', `children/reset-code`, {});
-  // Временный прямой вызов с правильным URL
-  const r2 = await fetch(`https://mama-coin.ct.ws/api/children/${childId}/reset-code`, {
-    method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include'
-  }).then(x=>x.json());
-  if (r2.ok) {
-    toast('Код обновлён: ' + r2.data.child_code);
+  const r = await apiRequest('POST', `children/${childId}/reset-code`);
+  if (r.ok) {
+    toast('Код: ' + r.data.child_code);
     await loadParentData();
     openChildSheet(childId);
-  } else toast(r2.error||'Ошибка', 'error');
+  } else toast(r.error||'Ошибка создания кода', 'error');
 }
 
 async function confirmDeleteChild(id, name) {
@@ -443,6 +439,10 @@ async function doLogout() {
   showScreen('splash');
 }
 function openSheet(id) {
+  // Закрываем другие шторки перед открытием новой
+  ['p-create-task-sheet','p-reject-sheet','p-child-sheet','p-task-view-sheet'].forEach(s => {
+    if (s !== id) document.getElementById(s)?.classList.remove('open');
+  });
   document.getElementById('p-overlay')?.classList.add('open');
   document.getElementById(id)?.classList.add('open');
 }

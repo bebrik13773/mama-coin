@@ -1,7 +1,8 @@
 <?php
-$db   = Database::get();
-$auth = Auth::requireParent();
-$body = json_decode(file_get_contents('php://input'), true) ?? [];
+$db      = Database::get();
+$auth    = Auth::requireParent();
+$body    = json_decode(file_get_contents('php://input'), true) ?? [];
+$subPath = $segments[2] ?? null; // children/{id}/reset-code → $subPath='reset-code'
 
 // GET /children
 if ($method === 'GET' && !$id) {
@@ -17,7 +18,25 @@ if ($method === 'GET' && !$id) {
     Response::success($s->fetchAll());
 }
 
-// GET /children/{id} — данные одного ребёнка
+// POST /children/{id}/reset-code
+if ($method === 'POST' && $id && $subPath === 'reset-code') {
+    $childId = intval($id);
+    // Проверяем что ребёнок принадлежит этой семье
+    $s = $db->prepare('SELECT id FROM children WHERE id=? AND family_id=?');
+    $s->execute([$childId, $auth['family_id']]);
+    if (!$s->fetch()) Response::error('Ребёнок не найден', 404);
+
+    do {
+        $code = strtoupper(substr(md5(uniqid('c', true)), 0, 6));
+        $s = $db->prepare('SELECT id FROM children WHERE child_code=?');
+        $s->execute([$code]);
+    } while ($s->fetch());
+
+    $db->prepare('UPDATE children SET child_code=? WHERE id=?')->execute([$code, $childId]);
+    Response::success(['child_code' => $code]);
+}
+
+// GET /children/{id}
 if ($method === 'GET' && $id) {
     $s = $db->prepare('SELECT * FROM children WHERE id=? AND family_id=?');
     $s->execute([$id, $auth['family_id']]);
@@ -26,23 +45,11 @@ if ($method === 'GET' && $id) {
     Response::success($child);
 }
 
-// POST /children/{id}/reset-code — генерировать новый код входа
-if ($method === 'POST' && $id === 'reset-code') {
-    $childId = intval($segments[1] ?? 0);
-    // Генерируем уникальный 6-значный код
-    do {
-        $code = strtoupper(substr(md5(uniqid('child_', true)), 0, 6));
-        $s = $db->prepare('SELECT id FROM children WHERE child_code=?');
-        $s->execute([$code]);
-    } while ($s->fetch());
-    $db->prepare('UPDATE children SET child_code=? WHERE id=? AND family_id=?')->execute([$code, $childId, $auth['family_id']]);
-    Response::success(['child_code' => $code]);
-}
-
 // DELETE /children/{id}
-if ($method === 'DELETE' && $id) {
+if ($method === 'DELETE' && $id && !$subPath) {
     $s = $db->prepare('DELETE FROM children WHERE id=? AND family_id=?');
     $s->execute([$id, $auth['family_id']]);
     Response::success(['deleted' => $s->rowCount() > 0]);
 }
+
 Response::error('Not found', 404);

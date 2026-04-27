@@ -690,3 +690,112 @@ h3 { font-size: 1rem;   font-weight: 700; }
   scrollbar-width: none;
 }
 .p-tab::-webkit-scrollbar, .c-tab::-webkit-scrollbar { display: none; }
+
+/* ── Design improvements: blur, gradients, polish ─────── */
+
+/* Glassmorphism cards */
+.card {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Bottom nav blur */
+.bottom-nav {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(26, 24, 40, 0.92);
+}
+
+/* Bottom sheet blur */
+.bottom-sheet {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(26, 24, 40, 0.97);
+}
+
+/* Topbar subtle gradient */
+.topbar {
+  background: linear-gradient(180deg, rgba(26,24,40,0.8) 0%, transparent 100%);
+}
+
+/* Task item hover */
+.task-item {
+  transition: border-color 0.15s, transform 0.1s;
+}
+.task-item:active { transform: scale(0.98); }
+.task-item:not(.blocked):hover { border-color: rgba(167,139,250,0.3); }
+
+/* Child row hover */
+.child-row { transition: border-color 0.15s, transform 0.1s; }
+.child-row:active { transform: scale(0.98); }
+
+/* Claim card subtle glow */
+.claim-card {
+  border-color: rgba(245,200,66,0.2);
+  background: linear-gradient(135deg, rgba(34,31,53,1) 0%, rgba(45,35,15,0.4) 100%);
+}
+
+/* Wallet hero enhanced */
+.wallet-hero {
+  background: linear-gradient(135deg, #1f1500 0%, #2d1f00 50%, #1a1000 100%);
+  box-shadow: 0 8px 32px rgba(245,200,66,0.15);
+}
+
+/* Stat box gradient border */
+.stat-box {
+  background: linear-gradient(135deg, var(--card) 0%, rgba(34,31,53,0.8) 100%);
+}
+
+/* Badge subtle shadow */
+.badge { box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+/* Overlay enhanced blur */
+.overlay {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Buttons glow on active */
+.btn-gold:active  { box-shadow: 0 0 20px rgba(245,200,66,0.4); }
+.btn-purple:active { box-shadow: 0 0 20px rgba(167,139,250,0.4); }
+
+/* Progress bar animated */
+.progress-fill {
+  animation: progressIn 0.6s ease-out;
+}
+@keyframes progressIn {
+  from { width: 0 !important; }
+}
+
+/* Leaderboard podium bars */
+.podium-bar {
+  transition: transform 0.2s;
+}
+.podium-bar:hover { transform: translateY(-3px); }
+
+/* Invite code box glow */
+.invite-code-box {
+  box-shadow: 0 0 20px rgba(245,200,66,0.1);
+}
+
+/* Screen transition */
+.screen.active {
+  animation: screenIn 0.25s ease-out;
+}
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Toast enhanced */
+#toast {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+}
+
+/* Coin spin animation for loading */
+@keyframes coinSpin {
+  0%   { transform: rotateY(0deg); }
+  50%  { transform: rotateY(90deg); }
+  100% { transform: rotateY(0deg); }
+}

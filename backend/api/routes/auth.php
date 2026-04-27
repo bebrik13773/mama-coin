@@ -49,32 +49,36 @@ if ($resource === 'child-join' && $method === 'POST') {
 
     if (!$code) Response::error('Введи код');
 
-    // Пробуем найти по child_code (повторный вход ребёнка)
-    $s = $db->prepare('SELECT c.*,c.family_id FROM children c WHERE c.child_code=?');
+    // 1. Пробуем child_code — личный код ребёнка (6 символов, повторный вход)
+    $s = $db->prepare('SELECT * FROM children WHERE child_code=?');
     $s->execute([$code]);
     $child = $s->fetch();
-
     if ($child) {
-        // Повторный вход по личному коду ребёнка
         $token = Auth::createSession($child['id'], 'child', $child['family_id']);
         Response::success(['token' => $token, 'child' => $child]);
     }
 
-    // Иначе — вход по коду семьи (первая регистрация)
+    // 2. invite_code семьи — только первая регистрация (имя обязательно)
     if (!$name) Response::error('Введи имя');
     $s = $db->prepare('SELECT * FROM families WHERE invite_code=?');
     $s->execute([$code]);
     $fam = $s->fetch();
-    if (!$fam) Response::error('Неверный код — проверь код семьи или личный код');
+    if (!$fam) Response::error('Неверный код. Попроси личный код у родителя.');
 
+    // Проверяем: есть ли уже ребёнок с таким именем?
     $s = $db->prepare('SELECT * FROM children WHERE family_id=? AND name=?');
     $s->execute([$fam['id'], $name]);
     $ex = $s->fetch();
 
     if ($ex) {
+        // Ребёнок уже существует — требуем личный код
+        if ($ex['child_code']) {
+            Response::error('Ребёнок с таким именем уже зарегистрирован. Используй личный код для входа.');
+        }
+        // child_code ещё нет — разрешаем войти (старые аккаунты)
         $cid = $ex['id'];
     } else {
-        // Генерируем child_code при первой регистрации
+        // Новый ребёнок — создаём с child_code
         do {
             $childCode = strtoupper(substr(md5(uniqid('c', true)), 0, 6));
             $sc = $db->prepare('SELECT id FROM children WHERE child_code=?');

@@ -56,7 +56,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
-                hideLoading()
+                // Показываем WebView и скрываем загрузку
+                runOnUiThread {
+                    webView.visibility     = View.VISIBLE
+                    loadingView.visibility = View.GONE
+                    errorView.visibility   = View.GONE
+                }
                 FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
                     view?.evaluateJavascript(
                         "if(window.MamaCoinApp) window.MamaCoinApp.onFcmToken('$token');", null
@@ -109,9 +114,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showLoading() {
-        loadingView.visibility = View.VISIBLE
-        webView.visibility     = View.GONE
-        errorView.visibility   = View.GONE
+        // Показываем индикатор только при первой загрузке (webview ещё не показан)
+        if (webView.visibility != View.VISIBLE) {
+            loadingView.visibility = View.VISIBLE
+            errorView.visibility   = View.GONE
+        }
     }
 
     private fun hideLoading() {

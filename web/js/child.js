@@ -29,7 +29,7 @@ function startChildAutoRefresh() {
     if (tab==='tasks')  document.getElementById('c-tab-tasks') ?.replaceWith(Object.assign(document.createElement('div'),{id:'c-tab-tasks', className:'c-tab',innerHTML:renderChildTasks()}));
     if (tab==='rank')   document.getElementById('c-tab-rank')  ?.replaceWith(Object.assign(document.createElement('div'),{id:'c-tab-rank',  className:'c-tab',innerHTML:renderChildLeaderboard()}));
     if (tab==='wallet') document.getElementById('c-tab-wallet')?.replaceWith(Object.assign(document.createElement('div'),{id:'c-tab-wallet',className:'c-tab',innerHTML:renderChildWallet()}));
-  }, 15000);
+  }, 10000);
 }
 
 function drawChild() {
