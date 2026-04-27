@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var errorView: View
     private lateinit var progressBar: ProgressBar
 
-    private val REMOTE_URL = "https://mama-coin.ct.ws"
+    private val REMOTE_URL = "https://mama-coin.ct.ws/web"
     private val LOCAL_URL  = "file:///android_asset/web/index.html"
 
     @SuppressLint("SetJavaScriptEnabled")
